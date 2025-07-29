@@ -11,11 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.pluto.ui.addedit.AddEditTransactionScreen
 import com.example.pluto.ui.theme.PlutoTheme
 import com.example.pluto.ui.transactions.TransactionScreen
-import dagger.hilt.android.AndroidEntryPoint
 
-@AndroidEntryPoint // Hilt annotation for dependency injection
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,15 +41,15 @@ class MainActivity : ComponentActivity() {
                         // Screen for adding a new transaction
                         composable("add_transaction") {
                             // We will create this screen later
-                            // AddEditTransactionScreen(navController = navController)
+                             AddEditTransactionScreen(navController = navController)
                         }
 
                         // Screen for editing an existing transaction
                         // The "{transactionId}" is a placeholder for the actual ID
                         composable("edit_transaction/{transactionId}") { backStackEntry ->
-                            val transactionId = backStackEntry.arguments?.getString("transactionId")
+                            val transactionId = backStackEntry.arguments?.getString("transactionId")?.toIntOrNull()
                             // We will create this screen later
-                            // AddEditTransactionScreen(navController = navController, transactionId = transactionId)
+                             AddEditTransactionScreen(navController = navController, transactionId = transactionId)
                         }
                     }
                 }

@@ -6,15 +6,14 @@ import com.example.pluto.data.model.Transaction
 import com.example.pluto.data.model.TransactionType
 import kotlinx.coroutines.flow.Flow
 import java.util.Date
-import javax.inject.Inject
 
 /**
  * Repository module for handling data operations.
  * This class abstracts the data source (Room DAO) from the ViewModels.
  *
- * @param transactionDao The DAO for transactions and accounts, injected by Hilt.
+ * @param transactionDao The DAO for transactions and accounts
  */
-class TransactionRepository @Inject constructor(
+class TransactionRepository constructor(
     private val transactionDao: TransactionDao
 ) {
 
@@ -44,6 +43,10 @@ class TransactionRepository @Inject constructor(
 
     fun getTotalForTypeInDateRange(accountId: Int, type: TransactionType, startDate: Date, endDate: Date): Flow<Double> {
         return transactionDao.getTotalForTypeInDateRange(accountId, type, startDate, endDate)
+    }
+
+    fun getTransactionById(id: Int): Flow<Transaction> {
+        return transactionDao.getTransactionById(id)
     }
 
     suspend fun insertTransaction(transaction: Transaction) {

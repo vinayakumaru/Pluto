@@ -21,11 +21,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.pluto.data.model.Transaction
 import com.example.pluto.data.model.TransactionType
+import com.example.pluto.ui.ViewModelFactory
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -35,8 +36,10 @@ private val Red = Color(0xFFB71C1C)
 @Composable
 fun TransactionScreen(
     navController: NavController,
-    viewModel: TransactionScreenViewModel = hiltViewModel()
 ) {
+    // The factory will handle creating the ViewModel with its repository
+    val viewModel: TransactionScreenViewModel = viewModel(factory = ViewModelFactory)
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
@@ -202,7 +205,6 @@ private fun TransactionList(
 
                     SwipeToDismissBox(
                         state = dismissState,
-                        // ✨ MODIFIER REMOVED FROM HERE ✨
                         enableDismissFromStartToEnd = false,
                         backgroundContent = {
                             val color by animateColorAsState(

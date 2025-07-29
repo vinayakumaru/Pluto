@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.pluto.data.model.Transaction
 import com.example.pluto.data.model.TransactionType
 import com.example.pluto.data.repository.TransactionRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -13,7 +12,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Date
-import javax.inject.Inject
 
 // Data class to hold all the state for our screen
 data class TransactionScreenUiState(
@@ -27,8 +25,7 @@ data class TransactionScreenUiState(
     val monthlyTotal: Double get() = monthlyIncome - monthlyExpense
 }
 
-@HiltViewModel
-class TransactionScreenViewModel @Inject constructor(
+class TransactionScreenViewModel constructor(
     private val repository: TransactionRepository
 ) : ViewModel() {
 
