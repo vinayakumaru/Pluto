@@ -2,8 +2,10 @@ package com.example.pluto.ui.transactions
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.pluto.data.model.Account
 import com.example.pluto.data.model.Transaction
 import com.example.pluto.data.model.TransactionType
+import com.example.pluto.data.model.TransactionWithAccount
 import com.example.pluto.data.repository.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,14 +15,12 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Date
 
-// Data class to hold all the state for our screen
 data class TransactionScreenUiState(
     val currentDate: Date = Date(),
-    val transactions: List<Transaction> = emptyList(),
+    val transactions: List<TransactionWithAccount> = emptyList(),
     val monthlyIncome: Double = 0.0,
     val monthlyExpense: Double = 0.0,
-    val accounts: List<com.example.pluto.data.model.Account> = emptyList(),
-    val selectedAccountId: Int? = null
+    val accounts: List<Account> = emptyList(),
 ) {
     val monthlyTotal: Double get() = monthlyIncome - monthlyExpense
 }
@@ -33,19 +33,10 @@ class TransactionScreenViewModel constructor(
     val uiState = _uiState.asStateFlow()
 
     init {
-        // Observe accounts and set the first one as selected by default
-        viewModelScope.launch {
-            repository.getAllAccounts().collect { accounts ->
-                _uiState.update { it.copy(accounts = accounts) }
-                if (accounts.isNotEmpty() && _uiState.value.selectedAccountId == null) {
-                    selectAccount(accounts.first().accountId)
-                }
-            }
-        }
+        getTransactionsForMonth()
     }
 
     private fun getTransactionsForMonth() {
-        val accountId = _uiState.value.selectedAccountId ?: return
         val calendar = Calendar.getInstance().apply { time = _uiState.value.currentDate }
 
         // Set to the first day of the month
@@ -57,9 +48,9 @@ class TransactionScreenViewModel constructor(
         calendar.add(Calendar.DAY_OF_MONTH, -1)
         val endDate = calendar.time
 
-        val transactionsFlow = repository.getTransactionsForAccountByDateRange(accountId, startDate, endDate)
-        val incomeFlow = repository.getTotalForTypeInDateRange(accountId, TransactionType.INCOME, startDate, endDate)
-        val expenseFlow = repository.getTotalForTypeInDateRange(accountId, TransactionType.EXPENSE, startDate, endDate)
+        val transactionsFlow = repository.getTransactionsForAccountByDateRange(startDate, endDate)
+        val incomeFlow = repository.getTotalForTypeInDateRange(TransactionType.INCOME, startDate, endDate)
+        val expenseFlow = repository.getTotalForTypeInDateRange(TransactionType.EXPENSE, startDate, endDate)
 
         viewModelScope.launch {
             // Combine the three flows. The block will be executed whenever any of the flows emit a new value.
@@ -71,19 +62,13 @@ class TransactionScreenViewModel constructor(
                     monthlyIncome = income,
                     monthlyExpense = expense,
                     accounts = _uiState.value.accounts,
-                    selectedAccountId = _uiState.value.selectedAccountId
                 )
             }.collect { newState ->
-                // Update the state flow with the newly combined state
                 _uiState.value = newState
             }
         }
     }
 
-    fun selectAccount(accountId: Int) {
-        _uiState.update { it.copy(selectedAccountId = accountId) }
-        getTransactionsForMonth()
-    }
 
     fun onPreviousMonthClick() {
         val calendar = Calendar.getInstance().apply { time = _uiState.value.currentDate }
@@ -102,7 +87,6 @@ class TransactionScreenViewModel constructor(
     fun onDeleteTransaction(transaction: Transaction) {
         viewModelScope.launch {
             repository.deleteTransaction(transaction)
-            // The flow will automatically update the UI after deletion
         }
     }
 }

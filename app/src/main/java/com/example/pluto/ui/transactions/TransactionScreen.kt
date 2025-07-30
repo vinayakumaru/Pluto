@@ -1,22 +1,53 @@
 package com.example.pluto.ui.transactions
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.DirectionsBus
+import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -24,31 +55,44 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.pluto.data.model.Transaction
 import com.example.pluto.data.model.TransactionType
+import com.example.pluto.data.model.TransactionWithAccount
 import com.example.pluto.ui.ViewModelFactory
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
-private val Green = Color(0xFF1B5E20)
-private val Red = Color(0xFFB71C1C)
+// Color constants for consistency
+private val RedExpense = Color(0xFFE57373)
+private val GreenIncome = Color(0xFF81C784)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionScreen(
     navController: NavController,
 ) {
-    // The factory will handle creating the ViewModel with its repository
     val viewModel: TransactionScreenViewModel = viewModel(factory = ViewModelFactory)
-
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
-            MonthSelectorTopBar(
-                currentDate = uiState.currentDate,
-                onPreviousMonth = { viewModel.onPreviousMonthClick() },
-                onNextMonth = { viewModel.onNextMonthClick() }
+            TopAppBar(
+                title = { Text("MyMoney", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { /* TODO: Open navigation drawer */ }) {
+                        Icon(Icons.Default.Menu, contentDescription = "Menu")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* TODO: Handle search */ }) {
+                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    }
+                }
             )
+        },
+        bottomBar = {
+            BottomNavigationBar(navController)
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { navController.navigate("add_transaction") }) {
@@ -57,222 +101,221 @@ fun TransactionScreen(
         }
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
-            AccountTabs(
-                accounts = uiState.accounts,
-                selectedAccountId = uiState.selectedAccountId,
-                onAccountSelected = { accountId -> viewModel.selectAccount(accountId) }
+            MonthSelector(
+                currentDate = uiState.currentDate,
+                onPreviousMonth = { viewModel.onPreviousMonthClick() },
+                onNextMonth = { viewModel.onNextMonthClick() }
             )
-            MonthlySummaryCard(
-                income = uiState.monthlyIncome,
+            MonthlySummary(
                 expense = uiState.monthlyExpense,
+                income = uiState.monthlyIncome,
                 total = uiState.monthlyTotal
             )
             TransactionList(
                 transactions = uiState.transactions,
-                onDeleteTransaction = { transaction -> viewModel.onDeleteTransaction(transaction) },
-                onEditTransaction = { transactionId -> navController.navigate("edit_transaction/$transactionId") }
+                onTransactionClick = { transactionId ->
+                    navController.navigate("edit_transaction/$transactionId")
+                }
             )
         }
     }
 }
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
-private fun MonthSelectorTopBar(currentDate: Date, onPreviousMonth: () -> Unit, onNextMonth: () -> Unit) {
-    val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
-    TopAppBar(
-        title = {
-            Text(
-                text = monthFormat.format(currentDate),
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        navigationIcon = {
-            IconButton(onClick = onPreviousMonth) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous Month")
-            }
-        },
-        actions = {
-            IconButton(onClick = onNextMonth) {
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next Month")
-            }
-        }
-    )
-}
-
-@Composable
-private fun AccountTabs(
-    accounts: List<com.example.pluto.data.model.Account>,
-    selectedAccountId: Int?,
-    onAccountSelected: (Int) -> Unit
-) {
-    val selectedIndex = accounts.indexOfFirst { it.accountId == selectedAccountId }.coerceAtLeast(0)
-    if (accounts.isNotEmpty()) {
-        ScrollableTabRow(
-            selectedTabIndex = selectedIndex,
-            edgePadding = 16.dp,
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ) {
-            accounts.forEachIndexed { index, account ->
-                Tab(
-                    selected = selectedIndex == index,
-                    onClick = { onAccountSelected(account.accountId) },
-                    text = { Text(account.name, color = MaterialTheme.colorScheme.onPrimaryContainer) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun MonthlySummaryCard(income: Double, expense: Double, total: Double) {
-    Card(
+private fun MonthSelector(currentDate: Date, onPreviousMonth: () -> Unit, onNextMonth: () -> Unit) {
+    val monthFormat = SimpleDateFormat("MMMM, yyyy", Locale.getDefault())
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+            .padding(vertical = 8.dp, horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceAround
-        ) {
-            SummaryItem("Income", "₹%.2f".format(income), Green)
-            SummaryItem("Expense", "₹%.2f".format(expense), Red)
-            SummaryItem("Total", "₹%.2f".format(total), MaterialTheme.colorScheme.onSurface)
+        IconButton(onClick = onPreviousMonth) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous Month")
+        }
+        Text(text = monthFormat.format(currentDate), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        IconButton(onClick = onNextMonth) {
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next Month")
         }
     }
 }
 
 @Composable
-private fun SummaryItem(label: String, amount: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = label, style = MaterialTheme.typography.labelMedium)
+fun MonthlySummary(expense: Double, income: Double, total: Double) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        SummaryItem("EXPENSE", "₹%.2f".format(expense), RedExpense)
+        SummaryItem("INCOME", "₹%.2f".format(income), GreenIncome)
+        SummaryItem("TOTAL", "₹%.2f".format(total), MaterialTheme.colorScheme.onSurface)
+    }
+}
+
+@Composable
+private fun RowScope.SummaryItem(label: String, amount: String, color: Color) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.weight(1f)
+    ) {
+        Text(text = label, style = MaterialTheme.typography.labelSmall, letterSpacing = 1.sp)
         Text(text = amount, style = MaterialTheme.typography.bodyLarge, color = color, fontWeight = FontWeight.SemiBold)
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
-private fun TransactionList(
-    transactions: List<Transaction>,
-    onDeleteTransaction: (Transaction) -> Unit,
-    onEditTransaction: (Int) -> Unit
-) {
-    val groupedTransactions = transactions.groupBy {
-        // Group by day, resetting time fields
+private fun TransactionList(transactions: List<TransactionWithAccount>, onTransactionClick: (Int) -> Unit) {
+    val grouped = transactions.groupBy {
         Calendar.getInstance().apply {
-            time = it.date
+            time = it.transaction.date
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
-        }.time
+        }.timeInMillis
     }
 
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         if (transactions.isEmpty()) {
             item {
                 Text(
                     text = "No transactions this month.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 32.dp),
+                    modifier = Modifier.fillMaxWidth().padding(32.dp),
                     textAlign = TextAlign.Center
                 )
             }
         } else {
-            groupedTransactions.forEach { (date, dailyTransactions) ->
-                stickyHeader {
-                    DateHeader(date = date, dailyTotal = dailyTransactions.sumOf { if (it.type == TransactionType.EXPENSE) it.amount else -it.amount })
-                }
-                items(dailyTransactions, key = { it.id }) { transaction ->
-                    val dismissState = rememberSwipeToDismissBoxState(
-                        confirmValueChange = {
-                            if (it == SwipeToDismissBoxValue.EndToStart) { // Swiping left
-                                onDeleteTransaction(transaction)
-                                true
-                            } else {
-                                false
-                            }
-                        },
-                        positionalThreshold = { it * 0.25f }
-                    )
+            grouped.forEach { (_, dailyTransactions) ->
+                val dateForHeader = dailyTransactions.first().transaction.date
 
-                    SwipeToDismissBox(
-                        state = dismissState,
-                        enableDismissFromStartToEnd = false,
-                        backgroundContent = {
-                            val color by animateColorAsState(
-                                targetValue = if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) Red.copy(alpha = 0.8f) else Color.Transparent,
-                                label = "background color"
-                            )
-                            Box(
-                                Modifier
-                                    .fillMaxSize()
-                                    .background(color)
-                                    .padding(horizontal = 20.dp),
-                                contentAlignment = Alignment.CenterEnd
-                            ) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete Icon")
-                            }
-                        }
-                    ) {
-                        TransactionRow(
-                            transaction = transaction,
-                            onClick = { onEditTransaction(transaction.id) }
-                        )
-                    }
+                val dailyTotal = dailyTransactions.sumOf {
+                    if (it.transaction.type == TransactionType.INCOME) it.transaction.amount else -it.transaction.amount
+                }
+
+                item {
+                    DateHeader(date = dateForHeader, dailyTotal = dailyTotal)
+                }
+                items(dailyTransactions, key = { it.transaction.id }) { transactionWithAccount ->
+                    TransactionRow(
+                        transactionWithAccount = transactionWithAccount,
+                        onClick = { onTransactionClick(transactionWithAccount.transaction.id) }
+                    )
                 }
             }
         }
     }
 }
-
 
 @Composable
 private fun DateHeader(date: Date, dailyTotal: Double) {
-    val dateFormat = SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault())
+    val dateFormat = SimpleDateFormat("MMM dd, EEEE", Locale.getDefault())
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f))
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = dateFormat.format(date), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(text = "₹%.2f".format(dailyTotal), style = MaterialTheme.typography.bodyMedium, color = if (dailyTotal < 0) Red else Green)
+        Text(
+            text = dateFormat.format(date),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = "₹%.2f".format(dailyTotal),
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.SemiBold,
+            color = if (dailyTotal < 0) RedExpense else GreenIncome
+        )
+    }
+}
+
+private fun getIconForCategory(category: String): ImageVector {
+    return when (category.lowercase()) {
+        "zomato", "office food", "food" -> Icons.Default.Fastfood
+        "blinkit", "shopping" -> Icons.Default.ShoppingCart
+        "transportation" -> Icons.Default.DirectionsBus
+        else -> Icons.Default.ReceiptLong
     }
 }
 
 @Composable
-private fun TransactionRow(transaction: Transaction, onClick: () -> Unit) {
-    val amountColor = if (transaction.type == TransactionType.INCOME) Green else Red
-    val amountSign = if (transaction.type == TransactionType.INCOME) "+" else "-"
+private fun TransactionRow(transactionWithAccount: TransactionWithAccount, onClick: () -> Unit) {
+    val transaction = transactionWithAccount.transaction
+    val account = transactionWithAccount.account
 
-    Surface(modifier = Modifier.clickable(onClick = onClick)) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.secondaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = getIconForCategory(transaction.category),
+                    contentDescription = transaction.category,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+
+            Spacer(Modifier.width(12.dp))
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = transaction.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-                Text(text = transaction.category, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(text = account.name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+
             Text(
-                text = "$amountSign₹%.2f".format(transaction.amount),
-                color = amountColor,
+                text = if (transaction.type == TransactionType.INCOME) "₹%.2f".format(transaction.amount) else "-₹%.2f".format(transaction.amount),
+                color = if (transaction.type == TransactionType.INCOME) GreenIncome else RedExpense,
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
+                fontWeight = FontWeight.Bold
             )
         }
+    }
+}
+
+@Composable
+private fun BottomNavigationBar(navController: NavController) {
+    NavigationBar {
+        NavigationBarItem(
+            selected = true,
+            onClick = { /* No-op */ },
+            icon = { Icon(Icons.Default.Receipt, contentDescription = "Records") },
+            label = { Text("Records") }
+        )
+        NavigationBarItem(
+            selected = false,
+            onClick = { /* No-op */ },
+            icon = { Icon(Icons.Default.Analytics, contentDescription = "Analysis") },
+            label = { Text("Analysis") }
+        )
+        NavigationBarItem(
+            selected = false,
+            onClick = { /* No-op */ },
+            icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Accounts") },
+            label = { Text("Accounts") }
+        )
+        NavigationBarItem(
+            selected = false,
+            onClick = { /* No-op */ },
+            icon = { Icon(Icons.Default.Category, contentDescription = "Categories") },
+            label = { Text("Categories") }
+        )
     }
 }

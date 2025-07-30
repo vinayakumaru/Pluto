@@ -36,7 +36,7 @@ class AddEditTransactionViewModel(
 
     private val _uiState = MutableStateFlow(AddEditScreenUiState())
     val uiState = _uiState.asStateFlow()
-    private val transactionId: Int? = savedStateHandle["transactionId"]
+    private val transactionId: Int? = savedStateHandle.get<String>("transactionId")?.toIntOrNull()
 
     init {
         viewModelScope.launch {

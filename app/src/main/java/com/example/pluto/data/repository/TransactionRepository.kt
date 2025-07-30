@@ -4,6 +4,7 @@ import com.example.pluto.data.local.TransactionDao
 import com.example.pluto.data.model.Account
 import com.example.pluto.data.model.Transaction
 import com.example.pluto.data.model.TransactionType
+import com.example.pluto.data.model.TransactionWithAccount
 import kotlinx.coroutines.flow.Flow
 import java.util.Date
 
@@ -37,12 +38,12 @@ class TransactionRepository constructor(
 
     // --- Transaction Operations ---
 
-    fun getTransactionsForAccountByDateRange(accountId: Int, startDate: Date, endDate: Date): Flow<List<Transaction>> {
-        return transactionDao.getTransactionsForAccountByDateRange(accountId, startDate, endDate)
+    fun getTransactionsForAccountByDateRange(startDate: Date, endDate: Date): Flow<List<TransactionWithAccount>> {
+        return transactionDao.getTransactionsForAccountByDateRange(startDate, endDate)
     }
 
-    fun getTotalForTypeInDateRange(accountId: Int, type: TransactionType, startDate: Date, endDate: Date): Flow<Double> {
-        return transactionDao.getTotalForTypeInDateRange(accountId, type, startDate, endDate)
+    fun getTotalForTypeInDateRange(type: TransactionType, startDate: Date, endDate: Date): Flow<Double> {
+        return transactionDao.getTotalForTypeInDateRange(type, startDate, endDate)
     }
 
     fun getTransactionById(id: Int): Flow<Transaction> {

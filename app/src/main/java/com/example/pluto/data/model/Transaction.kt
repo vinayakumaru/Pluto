@@ -31,6 +31,5 @@ data class Transaction(
     val date: Date,
     val type: TransactionType,
     val description: String? = null,
-    // This column links the transaction to an account.
     val accountId: Int
 )

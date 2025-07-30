@@ -34,22 +34,17 @@ class MainActivity : ComponentActivity() {
                     ) {
                         // Main transaction list screen
                         composable("home") {
-                            // We will create this screen in the next step
-                             TransactionScreen(navController = navController)
+                            TransactionScreen(navController = navController)
                         }
 
                         // Screen for adding a new transaction
                         composable("add_transaction") {
-                            // We will create this screen later
-                             AddEditTransactionScreen(navController = navController)
+                            AddEditTransactionScreen(navController = navController)
                         }
 
                         // Screen for editing an existing transaction
-                        // The "{transactionId}" is a placeholder for the actual ID
-                        composable("edit_transaction/{transactionId}") { backStackEntry ->
-                            val transactionId = backStackEntry.arguments?.getString("transactionId")?.toIntOrNull()
-                            // We will create this screen later
-                             AddEditTransactionScreen(navController = navController, transactionId = transactionId)
+                        composable("edit_transaction/{transactionId}") {
+                            AddEditTransactionScreen(navController = navController)
                         }
                     }
                 }

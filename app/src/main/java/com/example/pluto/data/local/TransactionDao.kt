@@ -8,6 +8,7 @@ import androidx.room.Update
 import com.example.pluto.data.model.Account
 import com.example.pluto.data.model.Transaction
 import com.example.pluto.data.model.TransactionType
+import com.example.pluto.data.model.TransactionWithAccount
 import kotlinx.coroutines.flow.Flow
 import java.util.Date
 
@@ -45,23 +46,22 @@ interface TransactionDao {
     fun getTransactionById(id: Int): Flow<Transaction>
 
     /**
-     * Fetches all transactions for a specific account within a given date range,
-     * ordered by date descending. This is the source for our infinite scroll.
+     * Fetches all transactions JOINED with their account for a specific account
+     * within a given date range, ordered by date descending.
      */
-    @Query("SELECT * FROM transactions WHERE accountId = :accountId AND date BETWEEN :startDate AND :endDate ORDER BY date DESC")
+    @androidx.room.Transaction
+    @Query("SELECT * FROM transactions WHERE date BETWEEN :startDate AND :endDate ORDER BY date DESC")
     fun getTransactionsForAccountByDateRange(
-        accountId: Int,
         startDate: Date,
         endDate: Date
-    ): Flow<List<Transaction>>
+    ): Flow<List<TransactionWithAccount>>
 
     /**
      * Calculates the total for a given transaction type (INCOME or EXPENSE)
      * for a specific account within a date range.
      */
-    @Query("SELECT SUM(amount) FROM transactions WHERE accountId = :accountId AND type = :type AND date BETWEEN :startDate AND :endDate")
+    @Query("SELECT SUM(amount) FROM transactions WHERE type = :type AND date BETWEEN :startDate AND :endDate")
     fun getTotalForTypeInDateRange(
-        accountId: Int,
         type: TransactionType,
         startDate: Date,
         endDate: Date

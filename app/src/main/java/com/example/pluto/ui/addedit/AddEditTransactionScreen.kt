@@ -24,7 +24,6 @@ import com.example.pluto.ui.ViewModelFactory
 @Composable
 fun AddEditTransactionScreen(
     navController: NavController,
-    transactionId: Int? = null
 ) {
 
     val viewModel: AddEditTransactionViewModel = viewModel(factory = ViewModelFactory)
@@ -97,15 +96,23 @@ fun AddEditTransactionScreen(
 
             // Date Picker
             val dateFormat = SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault())
-            OutlinedTextField(
-                value = dateFormat.format(uiState.date),
-                onValueChange = { },
-                label = { Text("Date") },
-                readOnly = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showDatePicker = true }
-            )
+            Box {
+                OutlinedTextField(
+                    value = dateFormat.format(uiState.date),
+                    onValueChange = { },
+                    label = { Text("Date") },
+                    readOnly = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                // This Box covers the TextField and intercepts the click
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable {
+                            showDatePicker = true
+                        }
+                )
+            }
 
             // Description
             OutlinedTextField(
